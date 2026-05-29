@@ -19,6 +19,7 @@ service cloud.firestore {
     // You can set this claim using the Firebase Admin SDK.
     function isAdmin() {
       return isAuthenticated() && (
+        request.auth.uid == 'cOw7E2REr0fbcbEIh0QvNfCjo5c2' || // subhadeepkar39@gmail.com
         request.auth.token.admin == true ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
