@@ -6,8 +6,8 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 export default function Login() {
   const { login, authError } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@donghuarealm.local')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   async function submit(event) {
     event.preventDefault()
