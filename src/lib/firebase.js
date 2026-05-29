@@ -17,24 +17,20 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check
-// Make sure to replace 'YOUR_RECAPTCHA_V3_SITE_KEY' with your actual public key
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6LeD1AItAAAAAJppvPJTxOHGOG6r6_HZB40BfK4n'),
+// In development, we use a debug token for App Check to work locally.
+// This will be printed to the console of your browser.
+if (import.meta.env.DEV) {
+  // @ts-ignore
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
 
+// Initialize App Check
+const appCheck = initializeAppCheck(app, {
+  // Use the reCAPTCHA v3 site key from your environment variables
+  provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
   // Set to true to allow auto-refresh of App Check tokens
   isTokenAutoRefreshEnabled: true
 });
-
-/*
-* For local development on http://localhost, you must use a debug token.
-* 1. In your browser's developer console, you will see a message like:
-*    "App Check debug token: <DEBUG_TOKEN_HERE>"
-* 2. Copy that token.
-* 3. In the same console, set this global variable:
-*    self.FIREBASE_APPCHECK_DEBUG_TOKEN = "<PASTE_YOUR_TOKEN_HERE>";
-* 4. Refresh the page. The App Check SDK will now use the debug token.
-*/
 
 const db = getFirestore(app);
 const auth = getAuth(app);
