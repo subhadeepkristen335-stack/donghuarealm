@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
 import { db, firebaseReady } from '../lib/firebase.js'
 import { loadState, saveState } from '../lib/storage.js'
 
@@ -19,50 +19,38 @@ export function DataProvider({ children }) {
       }
       return
     }
-    
-    async function loadFirestore() {
-      setLoading(true);
-      try {
-        const firestoreData = {}
-        
-        for (const name of collections) {
-          try {
-            const snapshot = await getDocs(collection(db, name))
-            if (!snapshot.empty) {
-              const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
-              if (data.length > 0) {
-                firestoreData[name] = data
-              }
-            }
-          } catch (error) {
-            console.warn(`Failed to load ${name} from Firestore:`, error.message)
-          }
-        }
-        
-        setState((current) => {
-          // Merge Firestore data with current local data
-          const merged = { ...current }
-          for (const name of collections) {
-            if (firestoreData[name]) {
-              if (Array.isArray(merged[name])) {
-                const firestoreIds = new Set(firestoreData[name].map(item => item.id))
-                const currentItems = merged[name].filter(item => !firestoreIds.has(item.id))
-                merged[name] = [...currentItems, ...firestoreData[name]]
-              } else {
-                merged[name] = firestoreData[name]
-              }
-            }
-          }
-          return merged
-        })
-      } catch (error) {
-        console.error('Firestore load failed:', error.message)
-      } finally {
+
+    setLoading(true);
+    const unsubscribers = [];
+
+    const initialLoadPromises = collections.map(name => {
+      return new Promise((resolve, reject) => {
+        const q = collection(db, name);
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setState(current => ({
+            ...current,
+            [name]: data,
+          }));
+          resolve(); // Resolve on the first snapshot for this collection
+        }, (error) => {
+          console.error(`Failed to listen to ${name} collection:`, error.message);
+          reject(error);
+        });
+        unsubscribers.push(unsubscribe);
+      });
+    });
+
+    Promise.all(initialLoadPromises)
+      .catch(error => console.error("Error during initial data load:", error))
+      .finally(() => {
         setLoading(false)
-      }
-    }
-    
-    loadFirestore()
+      });
+
+    // Cleanup function to unsubscribe from all listeners when the component unmounts.
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
   }, [firebaseReady])
 
   useEffect(() => {

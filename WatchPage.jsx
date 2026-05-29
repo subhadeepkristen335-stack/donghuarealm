@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '/firebase-config.js'; // Assuming you have a firebase config file
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import { useLocalStorage } from './useLocalStorage.js';
@@ -38,7 +38,9 @@ const WatchPage = () => {
   const [videoSource, setVideoSource] = useLocalStorage('preferredSource', 'youtube');
 
   useEffect(() => {
-    const fetchEpisode = async () => {
+    let unsubscribe = () => {};
+
+    const setupListener = async () => {
       setLoading(true);
       
       // Query for the anime by slug to get its ID and data
@@ -57,31 +59,38 @@ const WatchPage = () => {
       const animeId = animeDoc.id;
       setAnimeData(animeDoc.data());
 
-      // Fetch the specific episode using the found animeId
-      // FIX: Query the top-level 'episodes' collection instead of a subcollection.
+      // First, try to get the episode by its constructed ID to see if it exists
       const episodeId = `${animeId}-${episodeNumber}`;
       const episodeRef = doc(db, 'episodes', episodeId);
-      const episodeSnap = await getDoc(episodeRef);
+      const initialEpisodeSnap = await getDoc(episodeRef);
 
-      if (episodeSnap.exists()) {
-        setEpisodeData({ id: episodeSnap.id, ...episodeSnap.data() });
+      if (initialEpisodeSnap.exists()) {
+        // If it exists, set up a real-time listener on that specific document
+        unsubscribe = onSnapshot(episodeRef, (docSnap) => {
+          setEpisodeData({ id: docSnap.id, ...docSnap.data() });
+          setLoading(false);
+        });
       } else {
-        // Fallback for numeric episode ID, just in case the ID format is different.
+        // If not, fall back to querying for the episode
         console.warn(`Episode with ID ${episodeId} not found. Falling back to query.`);
         const q = query(collection(db, 'episodes'), where('animeId', '==', animeId), where('number', '==', parseInt(episodeNumber, 10)), limit(1));
-        const episodeQuerySnap = await getDocs(q);
-        if (!episodeQuerySnap.empty) {
-            const episodeDoc = episodeQuerySnap.docs[0];
-            setEpisodeData({ id: episodeDoc.id, ...episodeDoc.data() });
-        } else {
+        unsubscribe = onSnapshot(q, (querySnapshot) => {
+          if (!querySnapshot.empty) {
+              const episodeDoc = querySnapshot.docs[0];
+              setEpisodeData({ id: episodeDoc.id, ...episodeDoc.data() });
+          } else {
             console.error(`Episode ${episodeNumber} for anime ${animeId} not found!`);
             setEpisodeData(null);
-        }
+          }
+          setLoading(false);
+        });
       }
-      setLoading(false);
     };
 
-    fetchEpisode();
+    setupListener();
+
+    // Cleanup the listener when the component unmounts or dependencies change
+    return () => unsubscribe();
   }, [animeSlug, episodeNumber]);
 
   if (loading) return <div>Loading episode...</div>;
