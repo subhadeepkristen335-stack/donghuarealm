@@ -22,8 +22,8 @@ export function AuthProvider({ children }) {
           return result.user
         } catch (firebaseError) {
           // Firebase error - fall through to local auth
-          if (firebaseError.code === 'auth/configuration-not-found') {
-            console.warn('Firebase auth not configured, using local auth')
+          if (firebaseError.code === 'auth/configuration-not-found' || firebaseError.code === 'auth/firebase-app-check-token-is-invalid') {
+            console.warn(`Firebase auth issue (${firebaseError.code}), falling back to local auth`)
           } else {
             throw firebaseError
           }

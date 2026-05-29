@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, getDocs, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '/firebase-config.js'; // Assuming you have a firebase config file
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import { useLocalStorage } from './useLocalStorage.js';
+import { useData } from './src/contexts/DataContext.jsx';
 
 // Dummy player component
 const VideoPlayer = ({ source, videoId }) => {
@@ -29,72 +28,24 @@ const VideoPlayer = ({ source, videoId }) => {
 
 const WatchPage = () => {
   const { animeSlug, episodeNumber } = useParams();
-  const [animeData, setAnimeData] = useState(null);
-  const [episodeData, setEpisodeData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { anime, episodes, loading } = useData();
   
   // Use localStorage to persist language preference
   const [language, setLanguage] = useLocalStorage('preferredLanguage', 'hindi_dub');
   const [videoSource, setVideoSource] = useLocalStorage('preferredSource', 'youtube');
 
-  useEffect(() => {
-    let unsubscribe = () => {};
-
-    const setupListener = async () => {
-      setLoading(true);
-      
-      // Query for the anime by slug to get its ID and data
-      const animeQuery = query(collection(db, 'anime'), where('slug', '==', animeSlug), limit(1));
-      const animeQuerySnapshot = await getDocs(animeQuery);
-
-      if (animeQuerySnapshot.empty) {
-        console.error("Anime not found!");
-        setAnimeData(null);
-        setEpisodeData(null);
-        setLoading(false);
-        return;
-      }
-
-      const animeDoc = animeQuerySnapshot.docs[0];
-      const animeId = animeDoc.id;
-      setAnimeData(animeDoc.data());
-
-      // First, try to get the episode by its constructed ID to see if it exists
-      const episodeId = `${animeId}-${episodeNumber}`;
-      const episodeRef = doc(db, 'episodes', episodeId);
-      const initialEpisodeSnap = await getDoc(episodeRef);
-
-      if (initialEpisodeSnap.exists()) {
-        // If it exists, set up a real-time listener on that specific document
-        unsubscribe = onSnapshot(episodeRef, (docSnap) => {
-          setEpisodeData({ id: docSnap.id, ...docSnap.data() });
-          setLoading(false);
-        });
-      } else {
-        // If not, fall back to querying for the episode
-        console.warn(`Episode with ID ${episodeId} not found. Falling back to query.`);
-        const q = query(collection(db, 'episodes'), where('animeId', '==', animeId), where('number', '==', parseInt(episodeNumber, 10)), limit(1));
-        unsubscribe = onSnapshot(q, (querySnapshot) => {
-          if (!querySnapshot.empty) {
-              const episodeDoc = querySnapshot.docs[0];
-              setEpisodeData({ id: episodeDoc.id, ...episodeDoc.data() });
-          } else {
-            console.error(`Episode ${episodeNumber} for anime ${animeId} not found!`);
-            setEpisodeData(null);
-          }
-          setLoading(false);
-        });
-      }
-    };
-
-    setupListener();
-
-    // Cleanup the listener when the component unmounts or dependencies change
-    return () => unsubscribe();
-  }, [animeSlug, episodeNumber]);
-
   if (loading) return <div>Loading episode...</div>;
-  if (!animeData || !episodeData) return <div>Episode not found.</div>;
+
+  const animeData = anime.find(a => a.slug === animeSlug);
+
+  if (!animeData) {
+    return <div>Anime not found.</div>;
+  }
+
+  // Use '==' for comparison as episodeNumber from URL is a string
+  const episodeData = episodes.find(e => e.animeId === animeData.id && e.number == episodeNumber);
+
+  if (!episodeData) return <div>Episode not found.</div>;
 
   const videoId = episodeData.languages[language]?.[`${videoSource}Id`];
 

@@ -6,8 +6,30 @@ import { useData } from '../contexts/DataContext.jsx'
 import { getLatest } from '../utils/selectors.js'
 
 export default function Home() {
-  const { anime, episodes, settings } = useData()
+  const { anime, episodes, settings, loading } = useData()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+      </div>
+    )
+  }
+
   const featured = anime.find((item) => item.featured) || anime[0]
+  
+  if (!featured) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
+        <h2 className="text-2xl font-bold text-white">No content available</h2>
+        <p className="text-purple-200">
+          The database is empty or could not be reached.<br/>
+          Check your Firebase Firestore configuration.
+        </p>
+      </div>
+    )
+  }
+
   const latest = getLatest(anime, episodes).slice(0, 6)
 
   return (
@@ -39,7 +61,7 @@ export default function Home() {
         <SectionHeader title="Latest Episodes" subtitle="Fresh releases with clean episode navigation." action="View all" href="/latest" />
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {latest.map(({ anime: item, episode }) => (
-            <Link key={episode.id} to={`/watch/${episode.id}`} className="anime-card flex gap-3 rounded-lg p-3">
+            <Link key={episode.id} to={`/watch/${item.slug}/${episode.number}`} className="anime-card flex gap-3 rounded-lg p-3">
               <img src={item.thumbnail} alt="" className="h-24 w-16 rounded object-cover" />
               <div className="min-w-0">
                 <h3 className="truncate font-bold text-white">{item.title}</h3>

@@ -2,8 +2,95 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // In a real app, this would read from a 'roles' collection
+    // or, more securely, check for a custom claim on the auth token.
+    // You can set this claim using the Firebase Admin SDK.
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // ===============================================================
+    // Public, Read-Only Collections (for guests)
+    // Writable only by admins.
+    // ===============================================================
+    match /anime/{animeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /episodes/{episodeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /ads/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /pages/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ===============================================================
+    // Comments Collection
+    // ===============================================================
+    match /comments/{commentId} {
+      // Anyone can read comments
+      allow read: if true;
+
+      // Authenticated users can create valid comments
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 50
+                    && request.resource.data.body is string
+                    && request.resource.data.body.size() > 0 && request.resource.data.body.size() < 1000
+                    && request.resource.data.episodeId is string
+                    && request.resource.data.createdAt == request.time;
+
+      // Users can only update or delete their own comments
+      allow update: if isOwner(resource.data.userId)
+                    && request.resource.data.body is string
+                    && request.resource.data.body.size() > 0 && request.resource.data.body.size() < 1000;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // ===============================================================
+    // User-Private Collections
+    // ===============================================================
+    match /bookmarks/{bookmarkId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.animeId is string;
+    }
+
+    match /watch_history/{historyId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.animeId is string
+                    && request.resource.data.episodeId is string
+                    && request.resource.data.progress is number;
     }
   }
 }

@@ -18,21 +18,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // In development, we use a debug token for App Check to work locally.
-// This will be printed to the console of your browser.
-if (import.meta.env.DEV) {
+// This prevents generating a new token on every reload.
+if (import.meta.env.DEV && import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
   // @ts-ignore
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
 }
 
-// Initialize App Check
-const appCheck = initializeAppCheck(app, {
-  // Use the reCAPTCHA v3 site key from your environment variables
-  provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-  // Set to true to allow auto-refresh of App Check tokens
-  isTokenAutoRefreshEnabled: true
-});
+// Initialize App Check conditionally
+let appCheck = null;
+const recaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+if (recaptchaKey) {
+  try {
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(recaptchaKey),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch (error) {
+    console.warn("Failed to initialize App Check:", error);
+  }
+}
 
-const db = getFirestore(app);
+const db = getFirestore(app, "default");
 const auth = getAuth(app);
 const firebaseReady = true;
 
