@@ -8,11 +8,11 @@ import LanguageSwitcher from '../../LanguageSwitcher.jsx'
 import { useLocalStorage } from '../../useLocalStorage.js'
 
 export default function VideoPlayer({ episode, anime, nextEpisode }) {
-  const { watch_history, upsert } = useData()
+  const { watch_history = [], upsert } = useData()
   const iframeRef = useRef(null)
   const containerRef = useRef(null)
   const progressRef = useRef(0)
-  const saved = watch_history.find((item) => item.episodeId === episode.id)
+  const saved = watch_history.find((item) => item?.episodeId === episode?.id)
   
   // OPTIMIZATION & FIX: Normalize episode data for backward compatibility
   const normalizedEpisode = useMemo(() => {
