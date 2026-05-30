@@ -9,7 +9,7 @@ import NotFound from './NotFound.jsx'
 
 export default function Watch() {
   const { episodeId } = useParams()
-  const { anime, episodes, comments, upsert, loading } = useData()
+  const { anime = [], episodes = [], comments = [], upsert, loading } = useData()
   const [body, setBody] = useState('')
   
   const episode = episodes.find((item) => item.id === episodeId)
