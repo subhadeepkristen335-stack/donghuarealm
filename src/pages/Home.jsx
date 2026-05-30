@@ -60,7 +60,7 @@ export default function Home() {
       )}
 
       <section>
-        <SectionHeader title="Latest Episodes" subtitle="Fresh releases with clean episode navigation." action="View all" href="/latest" />
+        <SectionHeader title="Latest Episodes" subtitle="Fresh releases with clean episode navigation." action="View all" to="/latest" />
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {latest.map(({ anime: item, episode }) => (
             <Link key={episode.id} to={`/watch/${item.slug}/${episode.number}`} className="anime-card flex gap-3 rounded-lg p-3">
@@ -76,7 +76,7 @@ export default function Home() {
       </section>
 
       <section>
-        <SectionHeader title="Trending Donghua" subtitle="Most watched realms this week." action="More trending" href="/trending" />
+        <SectionHeader title="Trending Donghua" subtitle="Most watched realms this week." action="More trending" to="/trending" />
         <AnimeGrid items={anime.filter((item) => item.trending)} />
       </section>
     </div>
