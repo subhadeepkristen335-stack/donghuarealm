@@ -21,14 +21,13 @@ export function DataProvider({ children }) {
     }
     return initialState
   })
-  const [loading, setLoading] = useState(!firebaseReady)
+  // Always start as loading=true since we need to fetch from Firestore before rendering content
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // If Firebase isn't available yet, we're in a loading state. This effect will re-run when it's ready.
     if (!firebaseReady || !db) {
-      if (!loading) {
-        setLoading(true);
-      }
+      setLoading(true);
       return
     }
 

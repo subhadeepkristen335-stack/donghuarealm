@@ -6,7 +6,7 @@ import { useData } from '../contexts/DataContext.jsx'
 import { getLatest } from '../utils/selectors.js'
 
 export default function Home() {
-  const { anime, episodes, settings, loading } = useData()
+  const { anime = [], episodes = [], settings = {}, loading } = useData()
 
   if (loading) {
     return (
@@ -52,10 +52,12 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="glass flex items-center gap-3 rounded-lg p-4 text-purple-100">
-        <Megaphone className="text-pink-300" />
-        <p>{settings.announcement}</p>
-      </div>
+      {settings?.announcement && (
+        <div className="glass flex items-center gap-3 rounded-lg p-4 text-purple-100">
+          <Megaphone className="text-pink-300" />
+          <p>{settings.announcement}</p>
+        </div>
+      )}
 
       <section>
         <SectionHeader title="Latest Episodes" subtitle="Fresh releases with clean episode navigation." action="View all" href="/latest" />
