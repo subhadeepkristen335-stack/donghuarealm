@@ -8,14 +8,14 @@ import SearchBox from './SearchBox.jsx'
 export default function Layout() {
   const { settings } = useData()
   const [open, setOpen] = useState(false)
-  const nav = settings.nav || []
+  const nav = settings?.nav || []
 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-50 border-b border-purple-300/10 bg-[#080313]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
           <Link to="/" className="text-xl font-black tracking-wide text-white">
-            <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">{settings.logo}</span>
+            <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">{settings?.logo || 'Donghua Realm'}</span>
           </Link>
           <nav className="hidden items-center gap-1 lg:flex">
             {nav.map((item) => <NavLink key={item.href} to={item.href} className={({ isActive }) => `rounded-lg px-3 py-2 text-sm transition ${isActive ? 'bg-purple-600 text-white' : 'text-purple-100 hover:bg-purple-500/20'}`}>{item.label}</NavLink>)}
@@ -43,7 +43,7 @@ export default function Layout() {
       </main>
       <footer className="mt-10 border-t border-purple-300/10 bg-black/30">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 text-sm text-purple-200 md:grid-cols-[1fr_auto]">
-          <p>{settings.footer}</p>
+          <p>{settings?.footer || '© 2024 Donghua Realm. All rights reserved.'}</p>
           <div className="flex gap-4">
             <Link to="/about-us">About</Link><Link to="/contact-us">Contact</Link><Link to="/privacy-policy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/admin">Admin</Link>
           </div>
