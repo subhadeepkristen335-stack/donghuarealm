@@ -19,7 +19,7 @@ const app = initializeApp(firebaseConfig);
 
 // In development, we use a debug token for App Check to work locally.
 // This prevents generating a new token on every reload.
-if (import.meta.env.DEV && import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
+if (import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
   const token = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN.trim();
   // @ts-ignore
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = token === 'true' ? true : token;

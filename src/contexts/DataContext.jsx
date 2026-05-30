@@ -1,19 +1,31 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
 import { db, firebaseReady } from '../lib/firebase.js'
-import { loadState, saveState } from '../lib/storage.js'
+import { loadState } from '../lib/storage.js'
 
 const DataContext = createContext(null)
 const collections = ['anime', 'episodes', 'comments']
 
+// Collections that should sync with Firestore (not use localStorage)
+const firestoreSyncedCollections = ['anime', 'episodes', 'settings', 'ads', 'pages']
+
 export function DataProvider({ children }) {
-  const [state, setState] = useState(loadState)
-  const [loading, setLoading] = useState(!firebaseReady) // If Firebase isn't ready, we're already not loading
+  const [state, setState] = useState(() => {
+    // Only load non-Firestore collections from localStorage
+    const savedState = loadState()
+    const initialState = {}
+    for (const key in savedState) {
+      if (!firestoreSyncedCollections.includes(key)) {
+        initialState[key] = savedState[key]
+      }
+    }
+    return initialState
+  })
+  const [loading, setLoading] = useState(!firebaseReady)
 
   useEffect(() => {
     // If Firebase isn't available yet, we're in a loading state. This effect will re-run when it's ready.
     if (!firebaseReady || !db) {
-      // Keep loading until firebase is ready.
       if (!loading) {
         setLoading(true);
       }
@@ -23,11 +35,15 @@ export function DataProvider({ children }) {
     setLoading(true);
     const unsubscribers = [];
 
-    const initialLoadPromises = collections.map(name => {
+    // Subscribe to all collections that should sync with Firestore
+    const firestoreCollections = [...collections, 'settings', 'ads', 'pages']
+    
+    const initialLoadPromises = firestoreCollections.map(name => {
       return new Promise((resolve, reject) => {
         const q = collection(db, name);
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
           const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log(`[DataContext] Received snapshot for ${name}: ${data.length} documents`)
           setState(current => ({
             ...current,
             [name]: data,
@@ -53,9 +69,7 @@ export function DataProvider({ children }) {
     };
   }, [firebaseReady])
 
-  useEffect(() => {
-    saveState(state)
-  }, [state])
+  // Removed localStorage save - Firestore is the source of truth for synced collections
 
   const upsert = useCallback(async function upsert(collectionName, item) {
     if (!item || !item.id) {
@@ -66,52 +80,39 @@ export function DataProvider({ children }) {
     const originalItem = state[collectionName]?.find(entry => entry.id === id);
     const nextItem = { ...item, id, updatedAt: new Date().toISOString() }
     
-    // Update local state immediately
-    setState((current) => {
-      if (!current[collectionName]) {
-        // If collection doesn't exist, create it.
-        return { ...current, [collectionName]: [nextItem] };
-      }
-      
-      if (Array.isArray(current[collectionName])) {
-        // Check if item already exists
-        if (originalItem) {
-          // Update existing item
-          return {
-            ...current,
-            [collectionName]: current[collectionName].map((entry) => entry.id === id ? nextItem : entry),
-          }
-        } else {
-          // Add new item
-          return {
-            ...current,
-            [collectionName]: [...current[collectionName], nextItem],
-          }
-        }
-      }
-      return current
-    })
-    
-    // Persist to Firebase if available
+    // Persist to Firebase FIRST if available (for admin collections)
     if (firebaseReady && db && collections.includes(collectionName)) {
       try {
+        console.log(`[DataContext] Upserting to Firestore: ${collectionName}/${id}`)
         await setDoc(doc(db, collectionName, id), nextItem)
+        // Firestore listener will update local state automatically
       } catch (error) {
-        console.warn(`Failed to save to Firebase for ${collectionName}:`, error.message)
-        // Revert local state on failure
-        setState(current => {
-            if (!current[collectionName]) return current;
-            if (originalItem) {
-                // Item existed, so map back to original
-                return { ...current, [collectionName]: current[collectionName].map(entry => entry.id === id ? originalItem : entry) };
-            } else {
-                // Item was new, so filter it out
-                return { ...current, [collectionName]: current[collectionName].filter(entry => entry.id !== id) };
-            }
-        });
+        console.error(`Failed to save to Firebase for ${collectionName}:`, error.message)
         // Re-throw the error so the caller can handle it
         throw error;
       }
+    } else {
+      // For non-Firestore collections, update local state immediately
+      setState((current) => {
+        if (!current[collectionName]) {
+          return { ...current, [collectionName]: [nextItem] };
+        }
+        
+        if (Array.isArray(current[collectionName])) {
+          if (originalItem) {
+            return {
+              ...current,
+              [collectionName]: current[collectionName].map((entry) => entry.id === id ? nextItem : entry),
+            }
+          } else {
+            return {
+              ...current,
+              [collectionName]: [...current[collectionName], nextItem],
+            }
+          }
+        }
+        return current
+      })
     }
     
     return nextItem
@@ -121,31 +122,23 @@ export function DataProvider({ children }) {
     const itemToRemove = state[collectionName]?.find(entry => entry.id === id);
     if (!itemToRemove) return; // Nothing to remove
 
-    // Update local state first
-    setState((current) => ({
-      ...current,
-      [collectionName]: current[collectionName]?.filter((entry) => entry.id !== id) || [],
-    }))
-    
-    // Persist to Firebase if available
+    // Persist to Firebase FIRST if available (for admin collections)
     if (firebaseReady && db && collections.includes(collectionName)) {
       try {
+        console.log(`[DataContext] Deleting from Firestore: ${collectionName}/${id}`)
         await deleteDoc(doc(db, collectionName, id))
+        // Firestore listener will update local state automatically
       } catch (error) {
-        console.warn(`Failed to delete from Firebase for ${collectionName}:`, error.message)
-        // Revert local state on failure by re-adding the item
-        setState((current) => {
-          if (!current[collectionName]) return { ...current, [collectionName]: [itemToRemove] };
-          // Avoid duplicates if it's somehow still there
-          if (current[collectionName].some(entry => entry.id === id)) return current;
-          return {
-            ...current,
-            [collectionName]: [...current[collectionName], itemToRemove],
-          }
-        })
+        console.error(`Failed to delete from Firebase for ${collectionName}:`, error.message)
         // Re-throw error for caller
         throw error;
       }
+    } else {
+      // For non-Firestore collections, update local state immediately
+      setState((current) => ({
+        ...current,
+        [collectionName]: current[collectionName]?.filter((entry) => entry.id !== id) || [],
+      }))
     }
   }, [state])
 

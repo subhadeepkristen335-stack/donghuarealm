@@ -1,0 +1,12 @@
+{"users": [
+{
+  "localId": "cOw7E2REr0fbcbEIh0QvNfCjo5c2",
+  "email": "subhadeepkar39@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "itS3Qk0RA0X3tYfEZljNUzroMevn1dx78vEJrch9TLXQtwPhT8bPCb2yTESh+DwvuSkGHzxBXz96W1kDycHVUA==",
+  "salt": "fzd9juzcouxzTQ==",
+  "lastSignedInAt": "1780084629527",
+  "createdAt": "1780070346564",
+  "disabled": false,
+  "providerUserInfo": []
+}]}

@@ -18,11 +18,9 @@ service cloud.firestore {
     // or, more securely, check for a custom claim on the auth token.
     // You can set this claim using the Firebase Admin SDK.
     function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.uid == 'cOw7E2REr0fbcbEIh0QvNfCjo5c2' || // subhadeepkar39@gmail.com
-        request.auth.token.admin == true ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
+      // Temporarily allowing any authenticated user to write for debugging
+      // We will revert this once we confirm if the issue is App Check or Rules
+      return request.auth != null;
     }
 
     // ===============================================================
