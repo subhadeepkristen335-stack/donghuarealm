@@ -131,16 +131,16 @@ export default function VideoPlayer({ episode, anime, nextEpisode }) {
         } else if (containerRef.current?.msRequestFullscreen) {
           await containerRef.current.msRequestFullscreen()
         }
-        setIsFullscreen(true)
       } else {
-        if (document.fullscreenElement) {
-          document.exitFullscreen()
-        } else if (document.webkitFullscreenElement) {
-          document.webkitExitFullscreen?.()
-        } else if (document.mozFullScreenElement) {
-          document.mozCancelFullScreen?.()
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen()
+        } else if (document.mozCancelFullScreen) {
+          await document.mozCancelFullScreen()
+        } else if (document.msExitFullscreen) {
+          await document.msExitFullscreen()
         }
-        setIsFullscreen(false)
       }
     } catch (error) {
       console.error('Fullscreen error:', error)
@@ -165,9 +165,9 @@ export default function VideoPlayer({ episode, anime, nextEpisode }) {
         <div>
           <div 
             ref={containerRef}
-            className={`overflow-hidden rounded-lg border border-purple-300/20 bg-black shadow-2xl shadow-purple-950/40 ${isFullscreen ? 'rounded-none' : ''}`}
+            className={`overflow-hidden border border-purple-300/20 bg-black shadow-2xl shadow-purple-950/40 ${isFullscreen ? 'h-full w-full rounded-none' : 'rounded-lg'}`}
           >
-            <div className="aspect-video w-full">
+            <div className={`w-full ${isFullscreen ? 'h-full' : 'aspect-video'}`}>
               {isPlayerLoading && videoId && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-black text-purple-200">
                   Loading Player...
