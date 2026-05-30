@@ -63,7 +63,7 @@ export default function Home() {
         <SectionHeader title="Latest Episodes" subtitle="Fresh releases with clean episode navigation." action="View all" to="/latest" />
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {latest.map(({ anime: item, episode }) => (
-            <Link key={episode.id} to={`/watch/${item.slug}/${episode.number}`} className="anime-card flex gap-3 rounded-lg p-3">
+            <Link key={episode.id} to={`/watch/${episode.id}`} className="anime-card flex gap-3 rounded-lg p-3">
               <img src={item.thumbnail} alt="" className="h-24 w-16 rounded object-cover" />
               <div className="min-w-0">
                 <h3 className="truncate font-bold text-white">{item.title}</h3>
