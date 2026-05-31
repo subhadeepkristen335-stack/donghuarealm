@@ -3,8 +3,38 @@ import { doc, getDoc, setDoc, collection, query, where, deleteDoc, writeBatch } 
 import { db, firebaseReady } from './src/lib/firebase.js';
 import { useData } from './src/contexts/DataContext.jsx';
 
+const notifyTelegramWithRetry = async (payload, maxRetries = 3) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const res = await fetch('/api/notify-telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        console.log('[Telegram] Notification sent successfully');
+        return;
+      }
+      const data = await res.json();
+      throw new Error(data.error || 'Unknown error');
+    } catch (error) {
+      console.error(`[Telegram] Attempt ${i + 1} failed:`, error);
+      if (i === maxRetries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); // exponential backoff
+    }
+  }
+};
+
+const getAvailableLanguages = (languages) => {
+  const available = [];
+  if (languages?.hindi_dub?.youtubeId || languages?.hindi_dub?.dailymotionId) available.push('Hindi Dub');
+  if (languages?.chinese?.youtubeId || languages?.chinese?.dailymotionId) available.push('Chinese');
+  if (languages?.english_sub?.youtubeId || languages?.english_sub?.dailymotionId) available.push('English Sub');
+  return available.join(' / ');
+};
+
 const AdminAnimeForm = ({ animeId }) => {
-  const { anime: allAnime, episodes: allEpisodes, loading: dataLoading, upsert, remove } = useData();
+  const { anime: allAnime, episodes: allEpisodes, settings, loading: dataLoading, upsert, remove } = useData();
   const [anime, setAnime] = useState(null);
   const [episodes, setEpisodes] = useState(null);
   const [episodesToDelete, setEpisodesToDelete] = useState([]);
@@ -60,7 +90,9 @@ const AdminAnimeForm = ({ animeId }) => {
 
       // 3. Process upserts for episodes
       console.log(`[Admin Save] Upserting ${episodes.length} episodes.`);
+      const newEpisodesToNotify = [];
       for (const episode of episodes) {
+        const isNew = episode.id && episode.id.startsWith('temp-');
         const episodeId = episode.id && !episode.id.startsWith('temp-') ? episode.id : `${animeId}-${episode.number}`;
         const episodeData = {
           ...episode,
@@ -69,6 +101,10 @@ const AdminAnimeForm = ({ animeId }) => {
         };
         console.log('[Admin Save] Payload for episode upsert:', episodeData);
         await upsert('episodes', episodeData);
+
+        if (isNew) {
+          newEpisodesToNotify.push(episodeData);
+        }
       }
 
       // 4. Update the main anime document
@@ -80,6 +116,27 @@ const AdminAnimeForm = ({ animeId }) => {
       }
       console.log('[Admin Save] Payload for anime metadata upsert:', animeData);
       await upsert('anime', animeData);
+
+      // 5. Send Telegram Notifications
+      if (settings?.telegramAutoPost && newEpisodesToNotify.length > 0) {
+        for (const ep of newEpisodesToNotify) {
+          const availableLangs = getAvailableLanguages(ep.languages) || 'N/A';
+          const watchUrl = `${window.location.origin}/watch/${ep.id}`;
+          
+          try {
+            await notifyTelegramWithRetry({
+              animeTitle: animeData.title,
+              episodeNumber: ep.number,
+              language: availableLangs,
+              watchUrl: watchUrl,
+              imageUrl: animeData.posterImageUrl || animeData.thumbnail || animeData.banner,
+              template: settings.telegramTemplate
+            });
+          } catch (err) {
+            console.error(`[Telegram] Failed to send notification for episode ${ep.number}:`, err);
+          }
+        }
+      }
 
       alert('Saved successfully!');
       console.log('[Admin Save] Save process completed successfully.');

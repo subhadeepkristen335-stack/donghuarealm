@@ -122,6 +122,12 @@ export default function AdminDashboard() {
           <label className="mb-3 block text-sm text-purple-200">SEO description<textarea className={input} value={settings.seoDescription} onChange={(e) => updateSetting('seoDescription', e.target.value)} /></label>
           <label className="mb-3 block text-sm text-purple-200">Announcement<textarea className={input} value={settings.announcement} onChange={(e) => updateSetting('announcement', e.target.value)} /></label>
           <label className="block text-sm text-purple-200">Footer<textarea className={input} value={settings.footer} onChange={(e) => updateSetting('footer', e.target.value)} /></label>
+          <label className="mt-3 mb-3 block text-sm text-purple-200">
+            <span className="flex items-center gap-2">
+              <input type="checkbox" checked={Boolean(settings.telegramAutoPost)} onChange={(e) => updateSetting('telegramAutoPost', e.target.checked)} /> Enable Telegram Auto-Posting
+            </span>
+          </label>
+          <label className="mb-3 block text-sm text-purple-200">Telegram Message Template (Use <code>{`{Anime Title}`}</code>, <code>{`{Number}`}</code>, <code>{`{Language}`}</code>, <code>{`{Episode URL}`}</code>)<textarea className={input} rows="5" value={settings.telegramTemplate || "🔥 {Anime Title} - Episode {Number}\n\n🌐 Language: {Language}\n\n▶ Watch Now:\n{Episode URL}\n\n#DonghuaRealm"} onChange={(e) => updateSetting('telegramTemplate', e.target.value)} /></label>
         </Panel>
       </section>
 
