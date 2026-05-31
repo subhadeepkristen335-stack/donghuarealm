@@ -15,11 +15,11 @@ const notifyTelegramWithRetry = async (payload, maxRetries = 3) => {
       const isJson = res.headers.get('content-type')?.includes('application/json');
       const data = isJson ? await res.json() : null;
 
-      if (res.ok) {
+      if (res.ok && isJson) {
         console.log('[Telegram] Notification sent successfully');
         return;
       }
-      throw new Error(data?.error || `API returned status ${res.status}`);
+      throw new Error(data?.error || `API returned status ${res.status}${!isJson ? ' (Not JSON)' : ''}`);
     } catch (error) {
       console.error(`[Telegram] Attempt ${i + 1} failed:`, error);
       if (i === maxRetries - 1) throw error;

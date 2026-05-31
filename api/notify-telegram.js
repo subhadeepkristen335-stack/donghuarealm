@@ -3,6 +3,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const escapeHtml = (unsafe) => {
+    return (unsafe || '').toString()
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
   const { animeTitle, episodeNumber, language, watchUrl, imageUrl, template } = req.body;
   
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -16,10 +25,10 @@ export default async function handler(req, res) {
   const messageTemplate = template || defaultTemplate;
 
   const caption = messageTemplate
-    .replace(/{Anime\s*Title}/gi, animeTitle)
-    .replace(/{Number}/gi, episodeNumber)
-    .replace(/{Language}/gi, language)
-    .replace(/{Episode\s*URL}/gi, watchUrl);
+    .replace(/{Anime\s*Title}/gi, escapeHtml(animeTitle))
+    .replace(/{Number}/gi, escapeHtml(episodeNumber))
+    .replace(/{Language}/gi, escapeHtml(language))
+    .replace(/{Episode\s*URL}/gi, watchUrl); // URL doesn't necessarily need HTML escaping in href but as plain text it should probably not contain HTML anyway, but let's leave it unescaped for links.
 
   const isPhoto = Boolean(imageUrl);
   const telegramApiUrl = isPhoto 
