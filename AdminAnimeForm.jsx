@@ -11,12 +11,15 @@ const notifyTelegramWithRetry = async (payload, maxRetries = 3) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      const data = isJson ? await res.json() : null;
+
       if (res.ok) {
         console.log('[Telegram] Notification sent successfully');
         return;
       }
-      const data = await res.json();
-      throw new Error(data.error || 'Unknown error');
+      throw new Error(data?.error || `API returned status ${res.status}`);
     } catch (error) {
       console.error(`[Telegram] Attempt ${i + 1} failed:`, error);
       if (i === maxRetries - 1) throw error;
@@ -121,7 +124,7 @@ const AdminAnimeForm = ({ animeId }) => {
       if (settings?.telegramAutoPost && newEpisodesToNotify.length > 0) {
         for (const ep of newEpisodesToNotify) {
           const availableLangs = getAvailableLanguages(ep.languages) || 'N/A';
-          const watchUrl = `${window.location.origin}/watch/${ep.id}`;
+          const watchUrl = `${window.location.origin}/watch/${animeData.slug}/${ep.number}`;
           
           try {
             await notifyTelegramWithRetry({

@@ -9,10 +9,10 @@ export default async function handler(req, res) {
   const channelId = process.env.TELEGRAM_CHANNEL_ID;
 
   if (!botToken || !channelId) {
-    return res.status(500).json({ error: 'Telegram credentials not configured in environment variables.' });
+    return res.status(500).json({ error: 'Telegram credentials not configured in Vercel environment variables.' });
   }
 
-  const defaultTemplate = `🔥 {Anime Title} - Episode {Number}\n\n🌐 Language: {Language}\n\n▶ Watch Now:\n{Episode URL}\n\n#DonghuaRealm`;
+  const defaultTemplate = `🔥 <b>{Anime Title}</b> - Episode {Number}\n\n🌐 Language: {Language}\n\n▶ Watch Now:\n{Episode URL}\n\n#DonghuaRealm`;
   const messageTemplate = template || defaultTemplate;
 
   const caption = messageTemplate
@@ -21,7 +21,20 @@ export default async function handler(req, res) {
     .replace(/{Language}/gi, language)
     .replace(/{Episode\s*URL}/gi, watchUrl);
 
-  const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+  const isPhoto = Boolean(imageUrl);
+  const telegramApiUrl = isPhoto 
+    ? `https://api.telegram.org/bot${botToken}/sendPhoto`
+    : `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+  const payload = {
+    chat_id: channelId,
+    parse_mode: 'HTML',
+    [isPhoto ? 'photo' : 'text']: isPhoto ? imageUrl : caption,
+  };
+
+  if (isPhoto) {
+    payload.caption = caption;
+  }
 
   try {
     const response = await fetch(telegramApiUrl, {
@@ -29,11 +42,7 @@ export default async function handler(req, res) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        chat_id: channelId,
-        photo: imageUrl,
-        caption: caption,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
