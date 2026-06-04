@@ -1,5 +1,5 @@
 import { MessageCircle, Send } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import SectionHeader from '../components/SectionHeader.jsx'
 import VideoPlayer from '../components/VideoPlayer.jsx'
@@ -11,6 +11,7 @@ export default function Watch() {
   const { episodeId } = useParams()
   const { anime = [], episodes = [], comments = [], upsert, loading } = useData()
   const [body, setBody] = useState('')
+  const viewedRef = useRef(new Set())
   
   const episode = episodes.find((item) => item.id === episodeId)
   const item = anime.find((entry) => entry.id === episode?.animeId)
@@ -18,11 +19,12 @@ export default function Watch() {
 
   // Increment views when the episode is loaded
   useEffect(() => {
-    if (!loading && episode) {
-      // Increment episode view count
-      upsert('episodes', { id: episode.id, views: (episode.views || 0) + 1 })
-      // Increment overall anime view count (optional but highly recommended for aggregate totals)
-      if (item) upsert('anime', { id: item.id, views: (item.views || 0) + 1 })
+    if (!loading && episode && !viewedRef.current.has(episodeId)) {
+      viewedRef.current.add(episodeId)
+      // Increment episode view count, passing all existing episode data
+      upsert('episodes', { ...episode, views: (episode.views || 0) + 1 })
+      // Increment overall anime view count, passing all existing anime data
+      if (item) upsert('anime', { ...item, views: (item.views || 0) + 1 })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episodeId, loading])
