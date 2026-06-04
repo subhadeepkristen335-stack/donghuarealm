@@ -35,7 +35,7 @@ export default function AnimeDetails() {
             </div>
             <div className="mt-6 flex gap-3">
               {list[0] && <Link to={`/watch/${list[list.length - 1].id}`} className="rounded-lg bg-purple-600 px-5 py-3 font-bold text-white"><Play size={18} className="inline" /> Start Watching</Link>}
-              <button onClick={() => upsert('bookmarks', { animeId: item.id, createdAt: new Date().toISOString() })} className="rounded-lg bg-white/10 px-5 py-3 font-bold text-purple-100"><Heart size={18} className="inline" /> Favorite</button>
+              <button onClick={() => upsert('bookmarks', { id: crypto.randomUUID(), animeId: item.id, createdAt: new Date().toISOString() })} className="rounded-lg bg-white/10 px-5 py-3 font-bold text-purple-100"><Heart size={18} className="inline" /> Favorite</button>
             </div>
           </div>
         </div>

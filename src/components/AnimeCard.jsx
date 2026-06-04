@@ -11,7 +11,7 @@ export default function AnimeCard({ anime }) {
   function toggleBookmark(event) {
     event.preventDefault()
     if (saved) remove('bookmarks', bookmarks.find((item) => item.animeId === anime.id).id)
-    else upsert('bookmarks', { animeId: anime.id, createdAt: new Date().toISOString() })
+    else upsert('bookmarks', { id: crypto.randomUUID(), animeId: anime.id, createdAt: new Date().toISOString() })
   }
 
   return (

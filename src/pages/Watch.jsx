@@ -66,7 +66,7 @@ export default function Watch() {
   function submit(event) {
     event.preventDefault()
     if (!body.trim()) return
-    upsert('comments', { episodeId, name: 'Guest', body, createdAt: new Date().toISOString().slice(0, 10) })
+    upsert('comments', { id: crypto.randomUUID(), episodeId, name: 'Guest', body, createdAt: new Date().toISOString().slice(0, 10) })
     setBody('')
   }
 
