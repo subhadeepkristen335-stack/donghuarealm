@@ -59,21 +59,16 @@ service cloud.firestore {
       // Anyone can read comments
       allow read: if true;
 
-      // Authenticated users can create valid comments
-      allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.name is string
+      // Anyone can create valid comments
+      allow create: if request.resource.data.name is string
                     && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 50
                     && request.resource.data.body is string
                     && request.resource.data.body.size() > 0 && request.resource.data.body.size() < 1000
                     && request.resource.data.episodeId is string
-                    && request.resource.data.createdAt == request.time;
+                    && request.resource.data.createdAt is string;
 
-      // Users can only update or delete their own comments
-      allow update: if isOwner(resource.data.userId)
-                    && request.resource.data.body is string
-                    && request.resource.data.body.size() > 0 && request.resource.data.body.size() < 1000;
-      allow delete: if isOwner(resource.data.userId);
+      // Only admins can update or delete guest comments
+      allow update, delete: if isAdmin();
     }
 
     // ===============================================================
