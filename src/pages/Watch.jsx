@@ -1,5 +1,5 @@
 import { MessageCircle, Send } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import SectionHeader from '../components/SectionHeader.jsx'
 import VideoPlayer from '../components/VideoPlayer.jsx'
@@ -15,6 +15,17 @@ export default function Watch() {
   const episode = episodes.find((item) => item.id === episodeId)
   const item = anime.find((entry) => entry.id === episode?.animeId)
   const episodeComments = useMemo(() => comments.filter((comment) => comment.episodeId === episodeId), [comments, episodeId])
+
+  // Increment views when the episode is loaded
+  useEffect(() => {
+    if (!loading && episode) {
+      // Increment episode view count
+      upsert('episodes', { id: episode.id, views: (episode.views || 0) + 1 })
+      // Increment overall anime view count (optional but highly recommended for aggregate totals)
+      if (item) upsert('anime', { id: item.id, views: (item.views || 0) + 1 })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [episodeId, loading])
   
   // Show loading state while data is being loaded
   if (loading) {

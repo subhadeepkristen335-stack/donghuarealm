@@ -78,12 +78,12 @@ export const animeSeed = [
 ]
 
 export const episodeSeed = [
-  { id: 'btth-101', animeId: 'btth', number: 101, title: 'Heavenly Flame Pact', youtube: 'dQw4w9WgXcQ', dailymotion: 'x84sh87', duration: '21m', createdAt: '2026-05-24' },
-  { id: 'btth-102', animeId: 'btth', number: 102, title: 'Clan War Ignites', youtube: 'ysz5S6PUM-U', dailymotion: 'x7tgcz4', duration: '22m', createdAt: '2026-05-26' },
-  { id: 'swallowed-star-78', animeId: 'swallowed-star', number: 78, title: 'Galactic Trial', youtube: 'ScMzIvxBSi4', dailymotion: 'x8m0e9j', duration: '20m', createdAt: '2026-05-23' },
-  { id: 'swallowed-star-79', animeId: 'swallowed-star', number: 79, title: 'Star Tower Signal', youtube: 'aqz-KE-bpKQ', dailymotion: 'x7u5rbc', duration: '20m', createdAt: '2026-05-27' },
-  { id: 'perfect-world-165', animeId: 'perfect-world', number: 165, title: 'Ancient Beast Realm', youtube: 'M7lc1UVf-VE', dailymotion: 'x6p0b64', duration: '23m', createdAt: '2026-05-25' },
-  { id: 'throne-seal-112', animeId: 'throne-seal', number: 112, title: 'Crown of Light', youtube: 'jNQXAC9IVRw', dailymotion: 'x8i9w7x', duration: '21m', createdAt: '2026-05-22' },
+  { id: 'btth-101', animeId: 'btth', number: 101, title: 'Heavenly Flame Pact', youtube: 'dQw4w9WgXcQ', dailymotion: 'x84sh87', duration: '21m', createdAt: '2026-05-24', views: 12500 },
+  { id: 'btth-102', animeId: 'btth', number: 102, title: 'Clan War Ignites', youtube: 'ysz5S6PUM-U', dailymotion: 'x7tgcz4', duration: '22m', createdAt: '2026-05-26', views: 8900 },
+  { id: 'swallowed-star-78', animeId: 'swallowed-star', number: 78, title: 'Galactic Trial', youtube: 'ScMzIvxBSi4', dailymotion: 'x8m0e9j', duration: '20m', createdAt: '2026-05-23', views: 14200 },
+  { id: 'swallowed-star-79', animeId: 'swallowed-star', number: 79, title: 'Star Tower Signal', youtube: 'aqz-KE-bpKQ', dailymotion: 'x7u5rbc', duration: '20m', createdAt: '2026-05-27', views: 9300 },
+  { id: 'perfect-world-165', animeId: 'perfect-world', number: 165, title: 'Ancient Beast Realm', youtube: 'M7lc1UVf-VE', dailymotion: 'x6p0b64', duration: '23m', createdAt: '2026-05-25', views: 11500 },
+  { id: 'throne-seal-112', animeId: 'throne-seal', number: 112, title: 'Crown of Light', youtube: 'jNQXAC9IVRw', dailymotion: 'x8i9w7x', duration: '21m', createdAt: '2026-05-22', views: 5600 },
 ]
 
 export const settingsSeed = {
