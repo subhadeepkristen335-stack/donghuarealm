@@ -7,7 +7,7 @@ const DataContext = createContext(null)
 const collections = ['anime', 'episodes', 'comments']
 
 // Collections that should sync with Firestore (not use localStorage)
-const firestoreSyncedCollections = ['anime', 'episodes', 'settings', 'ads', 'pages']
+const firestoreSyncedCollections = ['anime', 'episodes', 'settings', 'ads', 'pages', 'stats']
 
 export function DataProvider({ children }) {
   const [state, setState] = useState(() => {
@@ -35,7 +35,7 @@ export function DataProvider({ children }) {
     const unsubscribers = [];
 
     // Subscribe to all collections that should sync with Firestore
-    const firestoreCollections = [...collections, 'settings', 'ads', 'pages']
+    const firestoreCollections = [...collections, 'settings', 'ads', 'pages', 'stats']
     
     const initialLoadPromises = firestoreCollections.map(name => {
       return new Promise((resolve, reject) => {

@@ -8,7 +8,7 @@ const input = 'w-full rounded-lg border border-purple-300/15 bg-black/35 px-3 py
 
 export default function AdminDashboard() {
   const data = useData()
-  const { anime, episodes, comments, bookmarks, watch_history, ads, settings, pages, upsert, remove, updateSetting, updateObject } = data
+  const { anime, episodes, comments, bookmarks, watch_history, ads, settings, pages, stats, upsert, remove, updateSetting, updateObject } = data
   const [editingAnimeId, setEditingAnimeId] = useState(null)
   const [animeForm, setAnimeForm] = useState({
     title: '',
@@ -22,13 +22,17 @@ export default function AdminDashboard() {
     isHindiDubAvailable: false,
   })
 
-  const stats = useMemo(() => [
-    ['Anime', anime.length],
-    ['Episodes', episodes.length],
-    ['Comments', comments.length],
-    ['Bookmarks', bookmarks.length],
-    ['History Items', watch_history.length],
-  ], [anime, episodes, comments, bookmarks, watch_history])
+  const dashboardStats = useMemo(() => {
+    const trafficStats = stats?.find?.((doc) => doc.id === 'traffic') || { views: 0 };
+    return [
+      ['Website Views', trafficStats.views],
+      ['Anime', anime?.length || 0],
+      ['Episodes', episodes?.length || 0],
+      ['Comments', comments?.length || 0],
+      ['Bookmarks', bookmarks?.length || 0],
+      ['History Items', watch_history?.length || 0],
+    ];
+  }, [stats, anime, episodes, comments, bookmarks, watch_history])
 
   function saveAnime(event) {
     event.preventDefault()
@@ -66,8 +70,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-3 md:grid-cols-5">
-        {stats.map(([label, value]) => (
+      <section className="grid gap-3 md:grid-cols-6">
+        {dashboardStats.map(([label, value]) => (
           <div key={label} className="glass rounded-lg p-4">
             <BarChart3 className="mb-3 text-pink-300" />
             <p className="text-2xl font-black text-white">{value}</p>

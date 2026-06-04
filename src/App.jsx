@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore'
+import { db } from './lib/firebase.js'
 import Layout from './components/Layout.jsx'
 import AdminLayout from './components/AdminLayout.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
@@ -17,6 +20,33 @@ import Watch from './pages/Watch.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 export default function App() {
+  useEffect(() => {
+    const trackView = async () => {
+      if (!db || sessionStorage.getItem('viewTracked')) return;
+      try {
+        const statsRef = doc(db, 'stats', 'traffic');
+        const statsDoc = await getDoc(statsRef);
+        const now = Date.now();
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        
+        if (!statsDoc.exists()) {
+          await setDoc(statsRef, { views: 1, lastReset: now });
+        } else {
+          const data = statsDoc.data();
+          if (now - data.lastReset > thirtyDays) {
+            await updateDoc(statsRef, { views: 1, lastReset: now });
+          } else {
+            await updateDoc(statsRef, { views: increment(1) });
+          }
+        }
+        sessionStorage.setItem('viewTracked', 'true');
+      } catch (e) {
+        console.warn('Failed to track view', e);
+      }
+    };
+    trackView();
+  }, []);
+
   return (
     <Routes>
       <Route element={<Layout />}>
