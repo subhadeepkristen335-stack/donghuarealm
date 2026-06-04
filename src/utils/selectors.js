@@ -9,8 +9,16 @@ export function getAnimeEpisodes(episodes, animeId) {
 }
 
 export function getLatest(anime, episodes) {
+  const seenAnimeIds = new Set()
   return [...episodes]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .filter((episode) => {
+      if (seenAnimeIds.has(episode.animeId)) {
+        return false
+      }
+      seenAnimeIds.add(episode.animeId)
+      return true
+    })
     .map((episode) => ({ episode, anime: anime.find((item) => item.id === episode.animeId) }))
     .filter((item) => item.anime)
 }
