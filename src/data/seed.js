@@ -90,7 +90,7 @@ export const settingsSeed = {
   title: 'Donghua Realm',
   logo: 'Donghua Realm',
   favicon: '/favicon.svg',
-  seoDescription: 'Watch latest donghua and anime episodes with YouTube and Dailymotion servers.',
+  seoDescription: 'Watch latest donghua and anime episodes with YouTube, Rumble, and Dailymotion servers.',
   colors: { primary: '#a855f7', accent: '#ec4899', background: '#06020d' },
   socials: { telegram: 'https://t.me/donghuarealm', youtube: 'https://youtube.com', discord: 'https://discord.com' },
   footer: 'Donghua Realm streams embeds from supported video platforms and stores only video IDs.',

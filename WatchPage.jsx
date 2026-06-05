@@ -11,7 +11,9 @@ const VideoPlayer = ({ source, videoId }) => {
   }
   const embedUrl = source === 'youtube'
     ? `https://www.youtube.com/embed/${videoId}`
-    : `https://www.dailymotion.com/embed/video/${videoId}`;
+    : source === 'rumble'
+      ? `https://rumble.com/embed/${videoId}`
+      : `https://www.dailymotion.com/embed/video/${videoId}`;
 
   return (
     <div className="aspect-video w-full">

@@ -30,9 +30,9 @@ const notifyTelegramWithRetry = async (payload, maxRetries = 3) => {
 
 const getAvailableLanguages = (languages) => {
   const available = [];
-  if (languages?.hindi_dub?.youtubeId || languages?.hindi_dub?.dailymotionId) available.push('Hindi Dub');
-  if (languages?.chinese?.youtubeId || languages?.chinese?.dailymotionId) available.push('Chinese');
-  if (languages?.english_sub?.youtubeId || languages?.english_sub?.dailymotionId) available.push('English Sub');
+  if (languages?.hindi_dub?.youtubeId || languages?.hindi_dub?.dailymotionId || languages?.hindi_dub?.rumbleId) available.push('Hindi Dub');
+  if (languages?.chinese?.youtubeId || languages?.chinese?.dailymotionId || languages?.chinese?.rumbleId) available.push('Chinese');
+  if (languages?.english_sub?.youtubeId || languages?.english_sub?.dailymotionId || languages?.english_sub?.rumbleId) available.push('English Sub');
   return available.join(' / ');
 };
 
@@ -111,7 +111,7 @@ const AdminAnimeForm = ({ animeId }) => {
       }
 
       // 4. Update the main anime document
-      let hasHindiDubUpdate = episodes.some(ep => ep.languages?.hindi_dub?.youtubeId || ep.languages?.hindi_dub?.dailymotionId);
+      let hasHindiDubUpdate = episodes.some(ep => ep.languages?.hindi_dub?.youtubeId || ep.languages?.hindi_dub?.dailymotionId || ep.languages?.hindi_dub?.rumbleId);
       const animeData = { ...anime };
       // Only update the date if a Hindi Dub has been added/modified in this save operation.
       if (hasHindiDubUpdate && (!anime.latestHindiDubReleaseDate || new Date() > new Date(anime.latestHindiDubReleaseDate))) {
@@ -179,9 +179,9 @@ const AdminAnimeForm = ({ animeId }) => {
         id: tempId,
         number: newEpisodeNumber,
         languages: {
-          chinese: { youtubeId: '', dailymotionId: '' },
-          hindi_dub: { youtubeId: '', dailymotionId: '' },
-          english_sub: { youtubeId: '', dailymotionId: '' }
+          chinese: { youtubeId: '', dailymotionId: '', rumbleId: '' },
+          hindi_dub: { youtubeId: '', dailymotionId: '', rumbleId: '' },
+          english_sub: { youtubeId: '', dailymotionId: '', rumbleId: '' }
         }
       }];
     });
@@ -260,6 +260,12 @@ const AdminAnimeForm = ({ animeId }) => {
                   placeholder="Dailymotion ID" 
                   value={ep.languages?.[lang]?.dailymotionId || ''}
                   onChange={(e) => handleEpisodeChange(index, lang, 'dailymotion', e.target.value)}
+                  className="w-full p-2 rounded bg-gray-700 border border-gray-600" 
+                />
+                <input 
+                  placeholder="Rumble ID" 
+                  value={ep.languages?.[lang]?.rumbleId || ''}
+                  onChange={(e) => handleEpisodeChange(index, lang, 'rumble', e.target.value)}
                   className="w-full p-2 rounded bg-gray-700 border border-gray-600" 
                 />
               </div>

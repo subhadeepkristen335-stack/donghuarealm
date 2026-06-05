@@ -28,6 +28,9 @@ export function getEmbedUrl(server, id, start = 0) {
     // Optimized Dailymotion embed with better parameters
     return `https://www.dailymotion.com/embed/video/${id}?start=${Math.floor(start)}&autoplay=0&controls=1&quality=auto&ui-highlights=true&ui-logo=false`
   }
+  if (server === 'rumble') {
+    return `https://rumble.com/embed/${id}`
+  }
   // Optimized YouTube embed with better parameters
   return `https://www.youtube.com/embed/${id}?start=${Math.floor(start)}&rel=0&modestbranding=1&controls=1&fs=1`
 }

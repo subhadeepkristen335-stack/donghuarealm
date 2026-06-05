@@ -23,6 +23,7 @@ export default function VideoPlayer({ episode, anime, nextEpisode }) {
     const languages = { chinese: {} };
     if (episode.youtube) languages.chinese.youtubeId = episode.youtube;
     if (episode.dailymotion) languages.chinese.dailymotionId = episode.dailymotion;
+    if (episode.rumble) languages.chinese.rumbleId = episode.rumble;
     return { ...episode, languages };
   }, [episode]);
   
@@ -76,6 +77,7 @@ export default function VideoPlayer({ episode, anime, nextEpisode }) {
       if (langData && !langData[`${server}Id`]) {
         // If preferred server is not available for this language, switch to one that is.
         if (langData.youtubeId) setServer('youtube');
+        else if (langData.rumbleId) setServer('rumble');
         else if (langData.dailymotionId) setServer('dailymotion');
       }
     }
@@ -196,6 +198,9 @@ export default function VideoPlayer({ episode, anime, nextEpisode }) {
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {currentLanguageData.youtubeId && (
               <button onClick={() => setServer('youtube')} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${server === 'youtube' ? 'bg-red-600 text-white' : 'bg-white/10 text-purple-100 hover:bg-white/15'}`}>YouTube</button>
+            )}
+            {currentLanguageData.rumbleId && (
+              <button onClick={() => setServer('rumble')} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${server === 'rumble' ? 'bg-green-600 text-white' : 'bg-white/10 text-purple-100 hover:bg-white/15'}`}>Rumble</button>
             )}
             {currentLanguageData.dailymotionId && (
               <button onClick={() => setServer('dailymotion')} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${server === 'dailymotion' ? 'bg-blue-600 text-white' : 'bg-white/10 text-purple-100 hover:bg-white/15'}`}>Dailymotion</button>

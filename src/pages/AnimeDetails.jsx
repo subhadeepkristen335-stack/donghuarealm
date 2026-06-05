@@ -42,7 +42,7 @@ export default function AnimeDetails() {
       </section>
 
       <section>
-        <SectionHeader title="Episode List" subtitle="YouTube and Dailymotion server IDs are stored per episode." />
+        <SectionHeader title="Episode List" subtitle="YouTube, Rumble, and Dailymotion server IDs are stored per episode." />
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {list.map((episode) => (
             <Link key={episode.id} to={`/watch/${episode.id}`} className="rounded-lg border border-purple-300/15 bg-purple-950/30 p-4 transition hover:border-purple-300/50 hover:bg-purple-700/25">

@@ -4,7 +4,7 @@ Modern dark purple donghua/anime streaming website built with React, Tailwind CS
 
 ## Features
 
-- YouTube and Dailymotion video hosting through stored video IDs only
+- YouTube, Rumble, and Dailymotion video hosting through stored video IDs only
 - Multi-server embedded player, theater mode, fullscreen, auto-next, and simulated resume progress
 - Homepage, anime details, watch page, genres, search, trending, latest, bookmarks, history, static legal pages, 404, and admin dashboard
 - Admin login, anime CRUD, episode creation, ad code editing, settings editing, page editing, analytics overview
@@ -58,6 +58,7 @@ anime: {
 episodes: {
   id, animeId, number, title,
   youtube: "VIDEO_ID",
+  rumble: "VIDEO_ID",
   dailymotion: "VIDEO_ID",
   duration, createdAt
 }
