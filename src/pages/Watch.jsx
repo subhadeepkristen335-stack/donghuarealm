@@ -9,7 +9,7 @@ import NotFound from './NotFound.jsx'
 
 export default function Watch() {
   const { episodeId } = useParams()
-  const { anime = [], episodes = [], comments = [], upsert, loading } = useData()
+  const { anime = [], episodes = [], comments = [], upsert, incrementViews, loading } = useData()
   const [body, setBody] = useState('')
   const viewedRef = useRef(new Set())
   
@@ -22,9 +22,9 @@ export default function Watch() {
     if (!loading && episode && !viewedRef.current.has(episodeId)) {
       viewedRef.current.add(episodeId)
       // Increment episode view count, passing all existing episode data
-      upsert('episodes', { ...episode, views: (episode.views || 0) + 1 })
+      incrementViews('episodes', episode.id)
       // Increment overall anime view count, passing all existing anime data
-      if (item) upsert('anime', { ...item, views: (item.views || 0) + 1 })
+      if (item) incrementViews('anime', item.id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episodeId, loading])

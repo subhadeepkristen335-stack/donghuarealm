@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
+import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot, updateDoc, increment } from 'firebase/firestore'
 import { db, firebaseReady } from '../lib/firebase.js'
 import { loadState } from '../lib/storage.js'
 
@@ -149,7 +149,31 @@ export function DataProvider({ children }) {
     setState((current) => ({ ...current, [collectionName]: { ...current[collectionName], [key]: value } }))
   }, [])
 
-  const value = useMemo(() => ({ ...state, loading, setState, upsert, remove, updateSetting, updateObject }), [state, loading, upsert, remove, updateSetting, updateObject])
+  const incrementViews = useCallback(async function incrementViews(collectionName, id) {
+    if (!id) return;
+    
+    if (firebaseReady && db && collections.includes(collectionName)) {
+      try {
+        console.log(`[DataContext] Incrementing views in Firestore: ${collectionName}/${id}`)
+        await updateDoc(doc(db, collectionName, id), { views: increment(1) })
+      } catch (error) {
+        console.error(`Failed to increment views in Firebase for ${collectionName}:`, error.message)
+      }
+    } else {
+      // Local state fallback
+      setState((current) => {
+        if (!current[collectionName] || !Array.isArray(current[collectionName])) return current;
+        return {
+          ...current,
+          [collectionName]: current[collectionName].map((entry) => 
+            entry.id === id ? { ...entry, views: (entry.views || 0) + 1 } : entry
+          ),
+        }
+      })
+    }
+  }, [])
+
+  const value = useMemo(() => ({ ...state, loading, setState, upsert, remove, updateSetting, updateObject, incrementViews }), [state, loading, upsert, remove, updateSetting, updateObject, incrementViews])
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }
 
