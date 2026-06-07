@@ -1,11 +1,5 @@
-import React from 'react';
 import clsx from 'clsx';
-
-const languages = [
-  { key: 'hindi_dub', name: 'Hindi Dub' },
-  { key: 'chinese', name: 'Chinese' },
-  { key: 'english_sub', name: 'English Sub' },
-];
+import { LANGUAGE_OPTIONS, languageHasVideo } from './src/utils/languages.js';
 
 /**
  * Language switcher component with glowing purple buttons.
@@ -17,8 +11,8 @@ const languages = [
 const LanguageSwitcher = ({ selectedLanguage, onLanguageChange, availableLanguages }) => {
   return (
     <div className="flex items-center justify-center space-x-2 sm:space-x-4 my-4">
-      {languages.map((lang) => {
-        const isAvailable = availableLanguages && availableLanguages[lang.key];
+      {LANGUAGE_OPTIONS.map((lang) => {
+        const isAvailable = languageHasVideo(availableLanguages?.[lang.key]);
         if (!isAvailable) return null;
 
         const isSelected = selectedLanguage === lang.key;

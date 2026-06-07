@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { doc, getDoc, setDoc, collection, query, where, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db, firebaseReady } from './src/lib/firebase.js';
 import { useData } from './src/contexts/DataContext.jsx';
@@ -37,12 +37,24 @@ const getAvailableLanguages = (languages) => {
 };
 
 const AdminAnimeForm = ({ animeId }) => {
-  const { anime: allAnime, episodes: allEpisodes, settings, loading: dataLoading, upsert, remove } = useData();
+  const { anime: allAnime, episodes: allEpisodes, comments: allComments = [], settings, loading: dataLoading, upsert, remove } = useData();
   const [anime, setAnime] = useState(null);
   const [episodes, setEpisodes] = useState(null);
   const [episodesToDelete, setEpisodesToDelete] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Optimize comments lookup by grouping them by episodeId
+  const commentsByEpisode = useMemo(() => {
+    const map = {};
+    if (allComments) {
+      for (const comment of allComments) {
+        if (!map[comment.episodeId]) map[comment.episodeId] = [];
+        map[comment.episodeId].push(comment);
+      }
+    }
+    return map;
+  }, [allComments]);
 
   // In a real app, you'd fetch episodes from the subcollection
   useEffect(() => {
@@ -270,6 +282,42 @@ const AdminAnimeForm = ({ animeId }) => {
                 />
               </div>
             ))}
+            
+            {/* Episode Comments */}
+            {(() => {
+              const episodeComments = commentsByEpisode[ep.id] || [];
+              return (
+                <div className="mt-4 border-t border-gray-700 pt-4">
+                  <h4 className="text-md font-bold text-white mb-2">Comments ({episodeComments.length})</h4>
+                  {episodeComments.length === 0 ? (
+                    <p className="text-sm text-gray-400">No comments for this episode yet.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                      {episodeComments.map(comment => (
+                        <div key={comment.id} className="bg-gray-800 p-2 rounded-md flex justify-between items-start border border-gray-700">
+                          <div>
+                            <strong className="text-purple-300 text-sm">{comment.name}</strong>
+                            <p className="text-gray-300 text-sm mt-1">{comment.body}</p>
+                          </div>
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (window.confirm('Are you sure you want to delete this comment?')) {
+                                remove('comments', comment.id);
+                              }
+                            }} 
+                            className="text-red-500 hover:text-red-400 text-xs font-semibold ml-2 flex-shrink-0"
+                            title="Delete Comment"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>
