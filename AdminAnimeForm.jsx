@@ -16,12 +16,12 @@ const notifyTelegramWithRetry = async (payload, maxRetries = 3) => {
       const data = isJson ? await res.json() : null;
 
       if (res.ok && isJson) {
-        console.log('[Telegram] Notification sent successfully');
+        console.log('[Telegram] Notification sent successfully', { episode: payload.episodeNumber, anime: payload.animeTitle });
         return;
       }
       throw new Error(data?.error || `API returned status ${res.status}${!isJson ? ' (Not JSON)' : ''}`);
     } catch (error) {
-      console.error(`[Telegram] Attempt ${i + 1} failed:`, error);
+      console.error(`[Telegram] Attempt ${i + 1}/${maxRetries} failed for episode ${payload.episodeNumber}:`, error.message);
       if (i === maxRetries - 1) throw error;
       await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); // exponential backoff
     }
@@ -41,6 +41,7 @@ const AdminAnimeForm = ({ animeId }) => {
   const [anime, setAnime] = useState(null);
   const [episodes, setEpisodes] = useState(null);
   const [episodesToDelete, setEpisodesToDelete] = useState([]);
+  const [newEpisodeIds, setNewEpisodeIds] = useState(new Set()); // Track newly added episodes
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -107,7 +108,8 @@ const AdminAnimeForm = ({ animeId }) => {
       console.log(`[Admin Save] Upserting ${episodes.length} episodes.`);
       const newEpisodesToNotify = [];
       for (const episode of episodes) {
-        const isNew = episode.id && episode.id.startsWith('temp-');
+        // Use the Set to track new episodes (more reliable than checking temp- prefix)
+        const isNew = newEpisodeIds.has(episode.id);
         const episodeId = episode.id && !episode.id.startsWith('temp-') ? episode.id : `${animeId}-${episode.number}`;
         const episodeData = {
           ...episode,
@@ -118,7 +120,7 @@ const AdminAnimeForm = ({ animeId }) => {
         await upsert('episodes', episodeData);
 
         if (isNew) {
-          newEpisodesToNotify.push(episodeData);
+          newEpisodesToNotify.push({ ...episodeData, originalTempId: episode.id });
         }
       }
 
@@ -131,26 +133,41 @@ const AdminAnimeForm = ({ animeId }) => {
       }
       console.log('[Admin Save] Payload for anime metadata upsert:', animeData);
       await upsert('anime', animeData);
+      console.log('[Admin Save] Anime metadata saved successfully');
 
-      // 5. Send Telegram Notifications
+      // 5. Send Telegram Notifications (AFTER anime data is saved)
       if (settings?.telegramAutoPost && newEpisodesToNotify.length > 0) {
+        console.log(`[Admin Save] Sending Telegram notifications for ${newEpisodesToNotify.length} new episodes`);
+        
+        // Validate that we have required data for notifications
+        const posterImage = animeData.posterImageUrl || animeData.thumbnail || animeData.banner;
+        if (!posterImage) {
+          console.warn('[Telegram] No poster image available. Notifications will be sent without images.');
+        }
+
         for (const ep of newEpisodesToNotify) {
           const availableLangs = getAvailableLanguages(ep.languages) || 'N/A';
           const watchUrl = `${window.location.origin}/watch/${animeData.slug}/${ep.number}`;
           
           try {
+            console.log(`[Telegram] Sending notification for episode ${ep.number}...`);
             await notifyTelegramWithRetry({
               animeTitle: animeData.title,
               episodeNumber: ep.number,
               language: availableLangs,
               watchUrl: watchUrl,
-              imageUrl: animeData.posterImageUrl || animeData.thumbnail || animeData.banner,
+              imageUrl: posterImage || null, // Pass null if no image available
               template: settings.telegramTemplate
             });
+            console.log(`[Telegram] Notification sent successfully for episode ${ep.number}`);
           } catch (err) {
-            console.error(`[Telegram] Failed to send notification for episode ${ep.number}:`, err);
+            console.error(`[Telegram] Failed to send notification for episode ${ep.number} after retries:`, err.message);
+            // Don't throw - we don't want to fail the entire save if Telegram fails
           }
         }
+        
+        // Clear the new episodes tracking after notifications are sent
+        setNewEpisodeIds(new Set());
       }
 
       alert('Saved successfully!');
@@ -163,7 +180,7 @@ const AdminAnimeForm = ({ animeId }) => {
     } finally {
       setLoading(false);
     }
-  }, [animeId, anime, episodes, episodesToDelete, upsert, remove]);
+  }, [animeId, anime, episodes, episodesToDelete, newEpisodeIds, upsert, remove, settings]);
 
   const handleEpisodeChange = useCallback((index, lang, provider, value) => {
     setEpisodes(currentEpisodes => {
@@ -184,8 +201,9 @@ const AdminAnimeForm = ({ animeId }) => {
   }, []);
 
   const addEpisode = useCallback(() => {
+    const tempId = `temp-${Date.now()}`; // Add a temporary unique ID for the key prop
+    setNewEpisodeIds(prev => new Set(prev).add(tempId)); // Track this as a new episode
     setEpisodes(currentEpisodes => {
-      const tempId = `temp-${Date.now()}`; // Add a temporary unique ID for the key prop
       const newEpisodeNumber = currentEpisodes.length > 0 ? Math.max(...currentEpisodes.map(e => e.number || 0)) + 1 : 1;
       return [...currentEpisodes, {
         id: tempId,
@@ -203,6 +221,11 @@ const AdminAnimeForm = ({ animeId }) => {
     setEpisodes(currentEpisodes => {
       const episodeToRemove = currentEpisodes[index];
       if (episodeToRemove && episodeToRemove.id) {
+        setNewEpisodeIds(prev => {
+          const updated = new Set(prev);
+          updated.delete(episodeToRemove.id); // Remove from tracked new episodes if it was there
+          return updated;
+        });
         setEpisodesToDelete(currentDeleteList => [...currentDeleteList, episodeToRemove.id]);
       }
       return currentEpisodes.filter((_, i) => i !== index);
